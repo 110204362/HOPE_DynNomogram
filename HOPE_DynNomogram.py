@@ -3,22 +3,21 @@ import dash
 from dash import dcc, html, Output, Input
 import plotly.graph_objs as go
 
-# --- 1. 参数设置区域 ---
-
+# --- 1 ---
 features = ['DL risk score_std_cat', 'ALBI_risk_score_std_cat', 'MVI_risk_score_std_cat']
-# 假设您模型中的系数保持不变
+
 coefs = [0.6169, 0.2703, 0.9427] 
 feature_ranges = [(0, 1), (0, 1), (0, 1)]
 feature_labels = [('0', '1'), ('0', '1'), ('0', '1')]
 
-# 【已更新】时间点的基线生存率 S0(t)
+
 BASELINE_SURVIVAL_MAP = {
-    12: 0.8690447,  # 12 个月 (1 年) 的 S0(t)
-    36: 0.6679847,  # 36 个月 (3 年) 的 S0(t)
-    60: 0.3763885   # 60 个月 (5 年) 的 S0(t)
+    12: 0.8690447,  
+    36: 0.6679847,  
+    60: 0.3763885   
 }
 
-# --- 2. 计算逻辑 ---
+# --- 2 ---
 
 contribs = np.abs(np.array(coefs) * (np.array([r[1] - r[0] for r in feature_ranges])))
 max_contrib = max(contribs)
@@ -60,7 +59,7 @@ def get_prob_scale(baseline_survival):
             
     return valid_probs, prob_scores
 
-# --- 3. 页面布局：美化版（与上一次保持一致） ---
+# --- 3 ---
 
 app = dash.Dash(__name__)
 
@@ -82,7 +81,7 @@ def feature_input(i):
 
 app.layout = html.Div([
     html.Div([
-        # 标题区
+        
         html.Div(
             html.H2('HOPE Nomogram: Dynamic Survival Prediction', style={
                 'textAlign': 'center', 
@@ -98,7 +97,7 @@ app.layout = html.Div([
             }
         ),
         
-        # 时间选择区
+       
         html.Div([
             html.Label("Select Prediction Time Point:", style={'font-weight':'bold', 'marginRight': '20px', 'color': '#333'}),
             dcc.RadioItems(
@@ -114,7 +113,7 @@ app.layout = html.Div([
             )
         ], style={'padding': '14px 0', 'textAlign': 'center', 'background': '#f0f4f7'}), 
 
-        # 控件区 (特征选择)
+       
         html.Div(
             [feature_input(i) for i in range(len(features))],
             style={
@@ -125,7 +124,7 @@ app.layout = html.Div([
             }
         ),
         
-        # 图表区
+        
         dcc.Graph(id='nomogram-graph', config={'displayModeBar': False}),
         
     ],style={
@@ -139,7 +138,7 @@ app.layout = html.Div([
     })
 ])
 
-# --- 4. 回调函数：修复轴线对齐 ---
+# --- 4 ---
 
 @app.callback(
     Output('nomogram-graph', 'figure'),
@@ -175,19 +174,19 @@ def update_nomogram(*args):
     x_axis_move = 35 
     FEATURE_NAME_X_POS = -30 
 
-    # Plot Colors (使用专业配色)
+    # Plot Colors 
     FEATURE_MARKER_COLOR = '#1f77b4'
     TOTAL_POINTS_COLOR = '#d62728'  
     PROB_MARKER_COLOR = '#2ca02c'   
 
-    # 1. Points 总标尺 (0-100)
+    # 1. Points  (0-100)
     fig.add_trace(go.Scatter(x=[0+x_axis_move, 100+x_axis_move], y=[y0, y0], mode='lines', line=dict(color='#333', width=2), showlegend=False))
     for pt in np.linspace(0, 100, 11):
         fig.add_trace(go.Scatter(x=[pt+x_axis_move, pt+x_axis_move], y=[y0, y0+0.1], mode='lines', line=dict(color='#333', width=2), showlegend=False))
         fig.add_trace(go.Scatter(x=[pt+x_axis_move], y=[y0+0.15], mode='text', text=[f'{int(pt)}'], textfont=dict(size=14, color='#333'), textposition='top center', showlegend=False))
     fig.add_trace(go.Scatter(x=[FEATURE_NAME_X_POS], y=[y0], mode='text', text=['Points'], textfont=dict(size=16, family='Arial', color='#333',), textposition='middle right', showlegend=False))
 
-    # 2. 特征标尺 (略)
+    # 2.
     for i, (feat, coef, r, labels) in enumerate(zip(features, coefs, feature_ranges, feature_labels)):
         y = y0 - (i+1)*ygap
         max_score = abs(coef * (r[1] - r[0])) * score_scale
@@ -213,7 +212,7 @@ def update_nomogram(*args):
 
     # 3. Total Points 
     y_total = y0 - (len(features)+1)*ygap
-    # 【轴线对齐基础 1】Total Points 轴线从 0 到 total_score_max 
+    # Total Points  0 to total_score_max 
     fig.add_trace(go.Scatter(x=[0+x_axis_move, total_score_max+x_axis_move], y=[y_total, y_total], mode='lines', line=dict(color='#1a5f7a', width=3), showlegend=False))
     fig.add_trace(go.Scatter(x=[FEATURE_NAME_X_POS], y=[y_total], mode='text', text=['Total Points'], textfont=dict(size=16, color='#333'), showlegend=False, textposition='middle right'))
     
@@ -226,19 +225,19 @@ def update_nomogram(*args):
     fig.add_trace(go.Scatter(x=[total+x_axis_move], y=[y_total], mode='markers', marker=dict(size=14, color=TOTAL_POINTS_COLOR, line=dict(width=1, color='white')), showlegend=False))
     fig.add_trace(go.Scatter(x=[total+x_axis_move], y=[y_total+0.08], mode='text', text=[f'{total:.1f}'], textfont=dict(size=16, color=TOTAL_POINTS_COLOR), showlegend=False, textposition='top center'))
 
-    # 4. 生存概率尺 
+    # 4. 
     y_prob = y0 - (len(features)+2)*ygap
     probs, prob_scores = get_prob_scale(baseline_survival) 
     
-    valid_map = [(s, p) for s, p in zip(prob_scores, probs)] # 移除分数范围过滤，让刻度计算更完整
+    valid_map = [(s, p) for s, p in zip(prob_scores, probs)]
     
     if valid_map:
         
-        # 【轴线对齐修复 2】Survival Probability 轴线也从 0 到 total_score_max
+        # Survival Probability  0 to total_score_max
         fig.add_trace(go.Scatter(x=[0 + x_axis_move, total_score_max + x_axis_move], y=[y_prob, y_prob], mode='lines', line=dict(color='#1a5f7a', width=3), showlegend=False))
         
         for s, p in valid_map:
-            # 【刻度对齐修复 3】只绘制在 Total Points 轴线范围内的刻度
+           
             if 0 <= s <= total_score_max:
                 fig.add_trace(go.Scatter(x=[s+x_axis_move, s+x_axis_move], y=[y_prob-0.1, y_prob], mode='lines', line=dict(color='#555', width=2), showlegend=False))
                 fig.add_trace(go.Scatter(x=[s+x_axis_move], y=[y_prob-0.15], mode='text', text=[f'{p:.2f}'], textfont=dict(size=14, color='#555'), showlegend=False, textposition='bottom center'))
@@ -249,14 +248,14 @@ def update_nomogram(*args):
     fig.add_trace(go.Scatter(x=[total+x_axis_move], y=[y_prob], mode='markers', marker=dict(size=14, color=PROB_MARKER_COLOR, line=dict(width=1, color='white')), showlegend=False))
     fig.add_trace(go.Scatter(x=[total+x_axis_move], y=[y_prob+0.08], mode='text', text=[f'{prob:.2%}'], textfont=dict(size=16, color=PROB_MARKER_COLOR), showlegend=False, textposition='top center'))
 
-    # 确保 X 轴的最大范围能够包含最大的标记位置 (上次的修复)
+
     max_marker_x = total_score_max + x_axis_move
     final_x_range_max = max_marker_x + 15 
 
     fig.update_layout(
         height=550, 
         yaxis=dict(showticklabels=False, range=[y_prob-1, y0+1], zeroline=False),
-        # X轴范围保持上次修复的动态范围
+       
         xaxis=dict(showticklabels=False, range=[-40, final_x_range_max], zeroline=False), 
         margin=dict(l=0, r=20, t=20, b=20),
         plot_bgcolor='#fcfcfc',
@@ -266,4 +265,5 @@ def update_nomogram(*args):
     return fig
 
 if __name__ == '__main__':
+
     app.run(debug=True, host='0.0.0.0', port=8050)
