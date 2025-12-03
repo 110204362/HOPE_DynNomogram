@@ -4,7 +4,7 @@ from dash import dcc, html, Output, Input
 import plotly.graph_objs as go
 
 # --- 1 ---
-features = ['DL risk score_std_cat', 'ALBI_risk_score_std_cat', 'MVI_risk_score_std_cat']
+features = ['DL risk score_cat', 'ALBI_risk_score_cat', 'MVI_risk_score_cat']
 
 coefs = [0.6169, 0.2703, 0.9427] 
 feature_ranges = [(0, 1), (0, 1), (0, 1)]
@@ -267,3 +267,4 @@ def update_nomogram(*args):
 if __name__ == '__main__':
 
     app.run(debug=True, host='0.0.0.0', port=8050)
+
